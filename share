@@ -1,0 +1,119 @@
+static void Main(string[] args)
+        {
+             Parser.Default.ParseArguments<RunOptions, ConfigOptions>(args)
+                .MapResult(
+                    (RunOptions opts) => RunAddAndReturnExitCode(opts),
+                    (ConfigOptions opts) => RunCommitAndReturnExitCode(opts),
+                    
+                    errs => 1);
+        }
+
+        static int RunAddAndReturnExitCode(RunOptions opts)
+        {
+           Console.WriteLine(Directory.GetCurrentDirectory());
+           string basepath=Directory.GetParent(Directory.GetCurrentDirectory())?.Parent?.Parent?.FullName;
+           Console.WriteLine("here"+basepath);
+           string p=basepath+@"\testing project";
+           Console.WriteLine(p);
+            
+            string env = opts.env;
+            if (String.IsNullOrEmpty(env))
+            {
+                Console.WriteLine("Tests will run in UAT env");
+            }
+            else if (env.ToLower().Equals("uat"))
+            {
+                Console.WriteLine("Tests will run in UAT env");
+            }
+            else if (env.ToLower().Equals("prod"))
+            {
+                Console.WriteLine("Tests will prod in UAT env");
+            }
+            else
+            {
+                Console.WriteLine("this env is not supported ");
+                return 10;
+            }
+            if (opts.all )
+            {
+                Console.WriteLine("run all tests");
+            }
+            else if (opts.gui)
+            {
+                    Console.WriteLine(" run gui tests");
+            }
+            else if(opts.api)
+            {
+                    Console.WriteLine("run api tests");
+                    ProcessRunner(p);
+            }
+            else  if (opts.e2e)
+            {
+                    Console.WriteLine("run e2e tests");
+            }
+            
+             
+           
+
+            
+            return 0;
+        }
+
+        static int RunCommitAndReturnExitCode(ConfigOptions opts)
+        {
+            return 0;
+        }
+
+        static void ProcessRunner(string path)
+        {
+            Process cmd = new Process();
+
+            cmd.StartInfo.FileName = "cmd.exe";
+            cmd.StartInfo.RedirectStandardInput = true;
+            cmd.StartInfo.RedirectStandardOutput = true;
+            cmd.StartInfo.CreateNoWindow = true;
+            cmd.StartInfo.UseShellExecute = false;
+
+            cmd.Start();
+
+            /* execute "dir" */
+
+            cmd.StandardInput.WriteLine("cd "+ path);
+            cmd.StandardInput.WriteLine(@"dotnet watch test --logger:'console; verbosity = detailed'");
+            cmd.StandardInput.Flush();
+            cmd.StandardInput.Close();
+            Console.WriteLine(cmd.StandardOutput.ReadToEnd());
+        }
+        
+        -------------------------------------------------------------------
+        
+    [Verb("run",true,HelpText = "run carwash tests")]
+    class RunOptions
+    {
+        [Value(0, HelpText = "The file to display information for.")]
+        public string FilePath { get; set; }
+
+        [Option('l', "all", HelpText = "run all tests")]
+        public bool all { get; set; }
+
+        [Option('g', "gui", HelpText = "run gui tests")]
+        public bool gui { get; set; }
+
+        [Option('a', "api", HelpText = "run api tests")]
+        public bool api { get; set; }
+
+        [Option('e', "e2e", HelpText = "run e2e tests")]
+        public bool e2e { get; set; }
+
+        [Option( 'v',"env", HelpText = "env")]
+        public string env { get; set; }
+
+
+    }
+
+    [Verb("set")]
+    class ConfigOptions
+    {
+        [Option("local", HelpText = "hh")]
+        public string loacl { get; set; }
+    }
